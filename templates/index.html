@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ page_title }}</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+    <script src="/static/app.js" defer></script>
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="hero">
+        <div>
+          <p class="eyebrow">Raspberry Pi Local MVP</p>
+          <h1>RFID Reader Test Stand</h1>
+          <p class="hero-copy">
+            Local FastAPI service for PN532 readers with realtime status,
+            UID capture and SQLite event history.
+          </p>
+        </div>
+        <div class="hero-status">
+          <span class="status-pill" id="systemOnlinePill">Offline</span>
+          <button class="ghost-button" id="refreshButton" type="button">Refresh</button>
+        </div>
+      </header>
+
+      <main class="dashboard">
+        <section class="panel panel-system">
+          <div class="panel-heading">
+            <div>
+              <p class="section-label">System Status</p>
+              <h2>Local backend overview</h2>
+            </div>
+            <span class="socket-badge offline" id="socketBadge">WS offline</span>
+          </div>
+          <div class="system-grid">
+            <article class="metric-card">
+              <span class="metric-label">Service</span>
+              <strong class="metric-value" id="systemState">Offline</strong>
+            </article>
+            <article class="metric-card">
+              <span class="metric-label">Readers</span>
+              <strong class="metric-value" id="readerCount">0</strong>
+            </article>
+            <article class="metric-card">
+              <span class="metric-label">Latest event</span>
+              <strong class="metric-value" id="lastEventTime">No events</strong>
+            </article>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-heading">
+            <div>
+              <p class="section-label">Readers</p>
+              <h2>Connected devices</h2>
+            </div>
+          </div>
+          <div class="readers-grid" id="readersGrid"></div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-heading">
+            <div>
+              <p class="section-label">Events Log</p>
+              <h2>Latest SQLite entries</h2>
+            </div>
+          </div>
+          <div class="log-list" id="logsList"></div>
+        </section>
+      </main>
+    </div>
+  </body>
+</html>

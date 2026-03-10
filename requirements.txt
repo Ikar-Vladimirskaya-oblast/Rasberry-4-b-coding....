@@ -1,0 +1,5 @@
+fastapi
+uvicorn[standard]
+jinja2
+adafruit-blinka
+adafruit-circuitpython-pn532

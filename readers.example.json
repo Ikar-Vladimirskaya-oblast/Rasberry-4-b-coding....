@@ -1,0 +1,17 @@
+[
+  {
+    "id": "reader_1",
+    "name": "Test Reader 1",
+    "type": "pn532",
+    "interface": "i2c",
+    "enabled": true,
+    "mock_mode": false,
+    "poll_interval": 0.5,
+    "scan_cooldown_seconds": 2.0,
+    "reconnect_interval": 5.0,
+    "i2c_address": "0x24",
+    "reset_pin": "D6",
+    "req_pin": "D12",
+    "mock_uids": ["04AABBCCDD"]
+  }
+]
