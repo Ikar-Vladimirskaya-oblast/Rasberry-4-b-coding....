@@ -2,7 +2,7 @@
 set -euo pipefail
 
 APP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-VENV_PYTHON="$APP_DIR/.venv/bin/python"
+BACKEND_LAUNCHER="$APP_DIR/scripts/run_backend.sh"
 LOG_FILE="$APP_DIR/app.log"
 APP_URL="http://127.0.0.1:8000/"
 PROFILE_DIR="$APP_DIR/.desktop-profile"
@@ -29,8 +29,8 @@ wait_for_backend() {
   return 1
 }
 
-if [[ ! -x "$VENV_PYTHON" ]]; then
-  echo "Missing virtualenv: $VENV_PYTHON"
+if [[ ! -x "$BACKEND_LAUNCHER" ]]; then
+  echo "Missing backend launcher: $BACKEND_LAUNCHER"
   echo "Create it first: python3 -m venv .venv && .venv/bin/pip install -r requirements.txt"
   exit 1
 fi
@@ -41,7 +41,7 @@ if [[ -z "${DISPLAY:-}" && -z "${WAYLAND_DISPLAY:-}" ]]; then
 fi
 
 if ! curl -fsS "http://127.0.0.1:8000/api/status" >/dev/null 2>&1; then
-  nohup "$VENV_PYTHON" "$APP_DIR/main.py" >>"$LOG_FILE" 2>&1 &
+  nohup "$BACKEND_LAUNCHER" >>"$LOG_FILE" 2>&1 &
   if ! wait_for_backend; then
     echo "Backend failed to start. Check $LOG_FILE"
     exit 1

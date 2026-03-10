@@ -90,10 +90,13 @@ SQLite event storage and a lightweight test GUI.
 
 ```bash
 source .venv/bin/activate
-python main.py
+./scripts/run_backend.sh
 ```
 
 The service listens on `http://0.0.0.0:8000` by default.
+
+If addressable LED mode is enabled, `scripts/run_backend.sh` escalates to
+`sudo`, because `rpi_ws281x` needs low-level GPIO memory access on Raspberry Pi.
 
 Open the GUI from another machine on the local network:
 
@@ -168,6 +171,18 @@ This script:
 - waits until `http://127.0.0.1:8000` is ready,
 - opens Chromium in `--app` mode without browser chrome.
 
+If addressable LED mode is enabled, start the backend once from terminal with:
+
+```bash
+./scripts/run_backend.sh
+```
+
+or explicitly:
+
+```bash
+sudo ./scripts/run_backend.sh
+```
+
 To install a desktop icon on Raspberry Pi:
 
 ```bash
@@ -190,7 +205,7 @@ Two ways to force mock mode:
 
    ```bash
    export APP_MOCK_ALL_READERS=true
-   python main.py
+   ./scripts/run_backend.sh
    ```
 
 In mock mode:
