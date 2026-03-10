@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 from models.events import EventRecord, EventType
 from models.readers import ReaderSnapshot, ReaderStatus
 from services.readers.base import ReaderBase
+from services.status_led import StatusLed
 from services.websocket_manager import WebSocketManager
 from storage.database import Database
 
@@ -20,10 +21,12 @@ class ReaderManager:
         readers: list[ReaderBase],
         database: Database,
         websocket_manager: WebSocketManager,
+        status_leds: dict[str, StatusLed] | None = None,
     ) -> None:
         self._readers = {reader.id: reader for reader in readers}
         self._database = database
         self._websocket_manager = websocket_manager
+        self._status_leds = status_leds or {}
         self._tasks: list[asyncio.Task[None]] = []
         self._stop_event = asyncio.Event()
         self._status_cache: dict[str, tuple[str, str | None]] = {}
@@ -39,6 +42,7 @@ class ReaderManager:
         await self._websocket_manager.broadcast({"type": "logs_updated", "event": system_event.to_payload()})
 
         for reader in self._readers.values():
+            await self._initialize_status_led(reader.id)
             await reader.initialize()
             await self._sync_reader_state(reader, force=True)
             task = asyncio.create_task(self._poll_reader(reader), name=f"reader-poll-{reader.id}")
@@ -55,6 +59,8 @@ class ReaderManager:
             await asyncio.gather(*self._tasks, return_exceptions=True)
         for reader in self._readers.values():
             await reader.close()
+        for status_led in self._status_leds.values():
+            await status_led.close()
 
     async def list_readers(self) -> list[dict[str, object]]:
         snapshots = [await reader.snapshot() for reader in self._readers.values()]
@@ -75,6 +81,7 @@ class ReaderManager:
             await self._sync_reader_state(reader)
 
         await reader.set_status(ReaderStatus.SCANNING, None)
+        await self._apply_status_led(reader.id, ReaderStatus.SCANNING)
         await self.broadcast_status_update()
 
         uid = await reader.manual_scan()
@@ -167,6 +174,7 @@ class ReaderManager:
             uid=uid,
             message=f"Card detected on {snapshot.name} via {source}.",
         )
+        await self._flash_status_led(reader.id)
         await self._websocket_manager.broadcast(
             {
                 "type": "card_detected",
@@ -198,6 +206,7 @@ class ReaderManager:
             snapshot.last_error,
         )
 
+        await self._apply_status_led(reader.id, snapshot.status)
         await self.broadcast_status_update()
 
         if snapshot.status == ReaderStatus.CONNECTED:
@@ -246,3 +255,22 @@ class ReaderManager:
             await asyncio.wait_for(self._stop_event.wait(), timeout=seconds)
         except asyncio.TimeoutError:
             return
+
+    async def _initialize_status_led(self, reader_id: str) -> None:
+        status_led = self._status_leds.get(reader_id)
+        if status_led is None:
+            return
+        await status_led.initialize()
+        await status_led.apply_status(ReaderStatus.STARTING)
+
+    async def _apply_status_led(self, reader_id: str, status: ReaderStatus) -> None:
+        status_led = self._status_leds.get(reader_id)
+        if status_led is None:
+            return
+        await status_led.apply_status(status)
+
+    async def _flash_status_led(self, reader_id: str) -> None:
+        status_led = self._status_leds.get(reader_id)
+        if status_led is None:
+            return
+        await status_led.flash_card_detected()

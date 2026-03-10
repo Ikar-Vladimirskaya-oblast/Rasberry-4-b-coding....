@@ -137,7 +137,7 @@ class PN532Reader(ReaderBase):
             spi = busio.SPI(sck, mosi, miso)
             resources.append(spi)
 
-            cs_pin_name = self.settings.spi_cs_pin or "D5"
+            cs_pin_name = self.settings.spi_cs_pin or "CE0"
             cs_pin = DigitalInOut(self._resolve_pin(board, cs_pin_name, cs_pin_name))
             resources.append(cs_pin)
 

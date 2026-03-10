@@ -24,6 +24,9 @@ class ReaderSnapshot:
     status: ReaderStatus
     mode: str
     enabled: bool
+    led_enabled: bool
+    led_gpio_pin: int | None
+    led_active_high: bool
     last_uid: str | None = None
     last_seen: datetime | None = None
     last_error: str | None = None
@@ -37,6 +40,9 @@ class ReaderSnapshot:
             "status": self.status.value,
             "mode": self.mode,
             "enabled": self.enabled,
+            "led_enabled": self.led_enabled,
+            "led_gpio_pin": self.led_gpio_pin,
+            "led_active_high": self.led_active_high,
             "last_uid": self.last_uid,
             "last_seen": self.last_seen.isoformat() if self.last_seen else None,
             "last_error": self.last_error,
@@ -51,6 +57,9 @@ class ReaderResponse(BaseModel):
     status: str
     mode: str
     enabled: bool
+    led_enabled: bool
+    led_gpio_pin: int | None = None
+    led_active_high: bool
     last_uid: str | None = None
     last_seen: datetime | None = None
     last_error: str | None = None

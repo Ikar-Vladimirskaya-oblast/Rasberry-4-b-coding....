@@ -13,6 +13,7 @@ from config import AppSettings, load_settings
 from routes import api_router, gui_router
 from services.reader_manager import ReaderManager
 from services.readers import build_reader
+from services.status_led import StatusLed
 from services.websocket_manager import WebSocketManager
 from storage.database import Database
 
@@ -39,7 +40,17 @@ async def lifespan(app: FastAPI):
 
     websocket_manager = WebSocketManager()
     readers = [build_reader(reader_settings) for reader_settings in SETTINGS.readers]
-    reader_manager = ReaderManager(readers=readers, database=database, websocket_manager=websocket_manager)
+    status_leds = {
+        reader_settings.id: StatusLed(reader_settings)
+        for reader_settings in SETTINGS.readers
+        if reader_settings.led_enabled and reader_settings.led_gpio_pin is not None
+    }
+    reader_manager = ReaderManager(
+        readers=readers,
+        database=database,
+        websocket_manager=websocket_manager,
+        status_leds=status_leds,
+    )
 
     app.state.settings = SETTINGS
     app.state.database = database

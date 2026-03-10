@@ -28,6 +28,12 @@ def _as_int(value: Any, default: int) -> int:
     return int(value)
 
 
+def _as_optional_int(value: Any) -> int | None:
+    if value is None:
+        return None
+    return _as_int(value, 0)
+
+
 def _as_float(value: Any, default: float) -> float:
     if value is None:
         return default
@@ -65,6 +71,9 @@ class ReaderSettings:
     uart_baudrate: int = 115200
     reset_pin: str | None = None
     req_pin: str | None = None
+    led_enabled: bool = False
+    led_gpio_pin: int | None = None
+    led_active_high: bool = True
     mock_uids: list[str] = field(default_factory=lambda: ["04AABBCCDD"])
 
     @classmethod
@@ -91,6 +100,9 @@ class ReaderSettings:
             uart_baudrate=_as_int(data.get("uart_baudrate"), 115200),
             reset_pin=data.get("reset_pin"),
             req_pin=data.get("req_pin"),
+            led_enabled=bool(data.get("led_enabled", False)),
+            led_gpio_pin=_as_optional_int(data.get("led_gpio_pin")),
+            led_active_high=bool(data.get("led_active_high", True)),
             mock_uids=_as_str_list(data.get("mock_uids"), ["04AABBCCDD"]),
         )
 
@@ -118,6 +130,9 @@ DEFAULT_READER_CONFIG = [
         "scan_cooldown_seconds": 2.0,
         "reconnect_interval": 5.0,
         "i2c_address": "0x24",
+        "led_enabled": False,
+        "led_gpio_pin": 17,
+        "led_active_high": True,
         "mock_uids": ["04AABBCCDD", "04FFEE1122"],
     }
 ]

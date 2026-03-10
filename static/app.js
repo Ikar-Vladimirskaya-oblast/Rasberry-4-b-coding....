@@ -101,6 +101,15 @@ function renderReaders() {
       const lastError = reader.last_error
         ? `<div><span class="reader-meta-label">Last error</span><div class="reader-meta-value">${escapeHtml(reader.last_error)}</div></div>`
         : "";
+      const ledInfo = reader.led_enabled
+        ? `<div>
+              <span class="reader-meta-label">Status LED</span>
+              <div class="reader-meta-value">GPIO ${escapeHtml(reader.led_gpio_pin)} · ${reader.led_active_high ? "active-high" : "active-low"}</div>
+            </div>`
+        : `<div>
+              <span class="reader-meta-label">Status LED</span>
+              <div class="reader-meta-value">Not configured</div>
+            </div>`;
 
       return `
         <article class="reader-card">
@@ -131,6 +140,7 @@ function renderReaders() {
               <span class="reader-meta-label">Mode</span>
               <div class="reader-meta-value">${escapeHtml(reader.mode)}</div>
             </div>
+            ${ledInfo}
             ${lastError}
           </div>
           <div class="reader-actions">
