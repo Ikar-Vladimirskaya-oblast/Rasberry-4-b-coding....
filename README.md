@@ -31,6 +31,9 @@ SQLite event storage and a lightweight test GUI.
 |-- static/
 |   |-- app.js
 |   `-- styles.css
+|-- scripts/
+|   |-- install_desktop_entry.sh
+|   `-- run_desktop_app.sh
 |-- storage/
 |   |-- __init__.py
 |   `-- database.py
@@ -93,6 +96,31 @@ Open the GUI from another machine on the local network:
 
 - `http://raspberrypi.local:8000`
 - `http://<raspberry-ip>:8000`
+
+## Desktop app on Raspberry Pi
+
+If you want it to look like an application instead of a normal browser tab,
+use Chromium app mode on the Raspberry Pi desktop:
+
+```bash
+chmod +x scripts/run_desktop_app.sh scripts/install_desktop_entry.sh
+./scripts/run_desktop_app.sh
+```
+
+This script:
+
+- starts the FastAPI backend if it is not already running,
+- waits until `http://127.0.0.1:8000` is ready,
+- opens Chromium in `--app` mode without browser chrome.
+
+To install a desktop icon on Raspberry Pi:
+
+```bash
+./scripts/install_desktop_entry.sh
+```
+
+This creates `RFID Local MVP` launchers in `~/Desktop` and
+`~/.local/share/applications`.
 
 ## Mock mode
 
