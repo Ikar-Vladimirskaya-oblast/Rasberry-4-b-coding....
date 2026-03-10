@@ -107,7 +107,7 @@ The default `readers.json` in this repository is now configured for:
 - `PN532` over `SPI`
 - chip select on `CE0`
 - reset on `GPIO25`
-- status LED on `GPIO17`
+- addressable `WS2812/NeoPixel` on `GPIO18`
 
 If you want to go back to mock mode, copy `readers.mock.json` over
 `readers.json` or export `APP_MOCK_ALL_READERS=true`.
@@ -128,21 +128,29 @@ Recommended mode: `SPI`
 
 Set the PN532 board switches or jumpers to `SPI` mode before power-on.
 
-### Status LED to Raspberry Pi
+### Addressable LED to Raspberry Pi
 
-- Raspberry Pi `GPIO17` (physical pin `11`) -> `220-330 Ohm resistor`
-- resistor -> LED anode
-- LED cathode -> Raspberry Pi `GND` (for example physical pin `14`)
+- Raspberry Pi `GPIO18` (physical pin `12`) -> `330 Ohm resistor` -> LED `DIN`
+- LED `5V` -> Raspberry Pi `5V` (physical pin `2` or `4`) for one pixel, or external `5V` PSU for a strip
+- LED `GND` -> Raspberry Pi `GND` (for example physical pin `14`)
+- If you use external `5V`, ground must stay common with Raspberry Pi
+
+For reliable data level on real WS2812 strips, a `74AHCT125` or `74AHCT245`
+level shifter between Raspberry Pi and `DIN` is recommended.
 
 This matches the default config:
 
 ```json
 "led_enabled": true,
-"led_gpio_pin": 17,
-"led_active_high": true
+"led_mode": "addressable",
+"led_gpio_pin": 18,
+"led_pixel_count": 1,
+"led_pixel_index": 0,
+"led_brightness": 64
 ```
 
-If your LED module is active-low, set `"led_active_high": false`.
+If several readers share one LED strip, keep the same `led_gpio_pin` and
+`led_pixel_count`, but assign each reader its own `led_pixel_index`.
 
 ## Desktop app on Raspberry Pi
 
@@ -211,8 +219,11 @@ In mock mode:
     "spi_cs_pin": "CE0",
     "reset_pin": "D25",
     "led_enabled": true,
-    "led_gpio_pin": 17,
-    "led_active_high": true
+    "led_mode": "addressable",
+    "led_gpio_pin": 18,
+    "led_pixel_count": 1,
+    "led_pixel_index": 0,
+    "led_brightness": 64
   }
 ]
 ```
@@ -246,7 +257,8 @@ The architecture already supports a list of readers and independent polling.
 - For Raspberry Pi, SPI is usually the most reliable PN532 interface.
 - For I2C, the Adafruit driver works best when `reset_pin` and `req_pin`
   are both connected and declared in `readers.json`.
-- The GUI now shows the configured LED GPIO pin for each reader.
+- The GUI now shows the configured addressable LED pin and pixel index.
+- `GPIO18` is the default output for the addressable LED status pixel.
 - If a reader is disconnected or fails during startup, the backend keeps
   running and retries initialization in the background.
 

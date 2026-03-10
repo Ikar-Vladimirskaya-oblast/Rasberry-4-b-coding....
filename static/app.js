@@ -104,7 +104,7 @@ function renderReaders() {
       const ledInfo = reader.led_enabled
         ? `<div>
               <span class="reader-meta-label">Status LED</span>
-              <div class="reader-meta-value">GPIO ${escapeHtml(reader.led_gpio_pin)} · ${reader.led_active_high ? "active-high" : "active-low"}</div>
+              <div class="reader-meta-value">${escapeHtml(reader.led_mode)} · GPIO ${escapeHtml(reader.led_gpio_pin)} · pixel ${escapeHtml(reader.led_pixel_index + 1)}/${escapeHtml(reader.led_pixel_count)} · brightness ${escapeHtml(reader.led_brightness)}</div>
             </div>`
         : `<div>
               <span class="reader-meta-label">Status LED</span>

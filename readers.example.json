@@ -12,8 +12,12 @@
     "spi_cs_pin": "CE0",
     "reset_pin": "D25",
     "led_enabled": true,
-    "led_gpio_pin": 17,
+    "led_mode": "addressable",
+    "led_gpio_pin": 18,
     "led_active_high": true,
+    "led_pixel_count": 1,
+    "led_pixel_index": 0,
+    "led_brightness": 64,
     "mock_uids": ["04AABBCCDD"]
   }
 ]

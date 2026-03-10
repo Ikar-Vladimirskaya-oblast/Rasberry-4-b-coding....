@@ -72,8 +72,12 @@ class ReaderSettings:
     reset_pin: str | None = None
     req_pin: str | None = None
     led_enabled: bool = False
+    led_mode: str = "addressable"
     led_gpio_pin: int | None = None
     led_active_high: bool = True
+    led_pixel_count: int = 1
+    led_pixel_index: int = 0
+    led_brightness: int = 64
     mock_uids: list[str] = field(default_factory=lambda: ["04AABBCCDD"])
 
     @classmethod
@@ -101,8 +105,12 @@ class ReaderSettings:
             reset_pin=data.get("reset_pin"),
             req_pin=data.get("req_pin"),
             led_enabled=bool(data.get("led_enabled", False)),
+            led_mode=str(data.get("led_mode", "addressable")).lower(),
             led_gpio_pin=_as_optional_int(data.get("led_gpio_pin")),
             led_active_high=bool(data.get("led_active_high", True)),
+            led_pixel_count=_as_int(data.get("led_pixel_count"), 1),
+            led_pixel_index=_as_int(data.get("led_pixel_index"), 0),
+            led_brightness=max(0, min(255, _as_int(data.get("led_brightness"), 64))),
             mock_uids=_as_str_list(data.get("mock_uids"), ["04AABBCCDD"]),
         )
 
@@ -131,8 +139,12 @@ DEFAULT_READER_CONFIG = [
         "reconnect_interval": 5.0,
         "i2c_address": "0x24",
         "led_enabled": False,
-        "led_gpio_pin": 17,
+        "led_mode": "addressable",
+        "led_gpio_pin": 18,
         "led_active_high": True,
+        "led_pixel_count": 1,
+        "led_pixel_index": 0,
+        "led_brightness": 64,
         "mock_uids": ["04AABBCCDD", "04FFEE1122"],
     }
 ]
