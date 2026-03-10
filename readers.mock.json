@@ -1,12 +1,12 @@
 [
   {
     "id": "reader_1",
-    "name": "PN532 Main Reader",
+    "name": "Mock Test Reader",
     "type": "pn532",
     "interface": "spi",
     "enabled": true,
-    "mock_mode": false,
-    "poll_interval": 0.2,
+    "mock_mode": true,
+    "poll_interval": 0.5,
     "scan_cooldown_seconds": 2.0,
     "reconnect_interval": 5.0,
     "spi_cs_pin": "CE0",
@@ -14,6 +14,6 @@
     "led_enabled": true,
     "led_gpio_pin": 17,
     "led_active_high": true,
-    "mock_uids": ["04AABBCCDD"]
+    "mock_uids": ["04AABBCCDD", "04FFEE1122"]
   }
 ]
