@@ -75,7 +75,7 @@ SQLite event storage and a lightweight test GUI.
 
    Enable I2C, SPI, or UART in `Interface Options`.
 
-   For the default real-hardware config in this repo, enable SPI.
+   For the default real-hardware config in this repo, enable I2C.
 
 3. Create a virtual environment and install dependencies:
 
@@ -107,9 +107,10 @@ Open the GUI from another machine on the local network:
 
 The default `readers.json` in this repository is now configured for:
 
-- `PN532` over `SPI`
-- chip select on `CE0`
+- `PN532` over `I2C`
+- bus address `0x24`
 - reset on `GPIO25`
+- IRQ/REQ on `GPIO24`
 - addressable `WS2812/NeoPixel` on `GPIO18`
 
 If you want to go back to mock mode, copy `readers.mock.json` over
@@ -117,19 +118,45 @@ If you want to go back to mock mode, copy `readers.mock.json` over
 
 ## Wiring for Raspberry Pi 4 + PN532 + LED
 
-Recommended mode: `SPI`
+Recommended mode for this repo: `I2C`
 
 ### PN532 to Raspberry Pi
 
-- PN532 `VCC` -> Raspberry Pi `3.3V` (physical pin `1`)
-- PN532 `GND` -> Raspberry Pi `GND` (physical pin `6`)
-- PN532 `SCK` -> Raspberry Pi `GPIO11 / SCLK` (physical pin `23`)
-- PN532 `MISO` -> Raspberry Pi `GPIO9 / MISO` (physical pin `21`)
-- PN532 `MOSI` -> Raspberry Pi `GPIO10 / MOSI` (physical pin `19`)
-- PN532 `SS` or `SDA` in SPI mode -> Raspberry Pi `GPIO8 / CE0` (physical pin `24`)
-- PN532 `RSTO` or `RSTPDN` -> Raspberry Pi `GPIO25` (physical pin `22`)
+Your board is `ELECHOUSE NFC MODULE V3`. For I2C, use the pins that are
+written directly on the module: `GND`, `VCC`, `SDA`, `SCL`, `RSTO`, `IRQ`.
 
-Set the PN532 board switches or jumpers to `SPI` mode before power-on.
+| Pin on PN532 module | Connect to Raspberry Pi | GPIO | Physical pin |
+|---|---|---:|---:|
+| `VCC` | `3.3V` | - | `1` |
+| `GND` | `GND` | - | `6` |
+| `SDA` | `SDA1` | `GPIO2` | `3` |
+| `SCL` | `SCL1` | `GPIO3` | `5` |
+| `RSTO` | reset line | `GPIO25` | `22` |
+| `IRQ` | request/interrupt | `GPIO24` | `18` |
+
+Самая простая распиновка в одну строку:
+
+- module `VCC` -> Pi pin `1`
+- module `GND` -> Pi pin `6`
+- module `SDA` -> Pi pin `3`
+- module `SCL` -> Pi pin `5`
+- module `RSTO` -> Pi pin `22`
+- module `IRQ` -> Pi pin `18`
+
+На самом модуле выставь переключатели режима в `I2C` по маркировке на плате
+перед включением питания.
+
+Если хочешь сначала проверить самый минимум, достаточно:
+
+- `VCC`
+- `GND`
+- `SDA`
+- `SCL`
+
+Для более стабильной работы потом обязательно добавь:
+
+- `RSTO`
+- `IRQ`
 
 ### Addressable LED to Raspberry Pi
 
@@ -225,14 +252,15 @@ In mock mode:
     "id": "reader_1",
     "name": "PN532 Main Reader",
     "type": "pn532",
-    "interface": "spi",
+    "interface": "i2c",
     "enabled": true,
     "mock_mode": false,
     "poll_interval": 0.2,
     "scan_cooldown_seconds": 2.0,
     "reconnect_interval": 5.0,
-    "spi_cs_pin": "CE0",
+    "i2c_address": "0x24",
     "reset_pin": "D25",
+    "req_pin": "D24",
     "led_enabled": true,
     "led_mode": "addressable",
     "led_gpio_pin": 18,
@@ -269,9 +297,10 @@ The architecture already supports a list of readers and independent polling.
 
 ## Hardware notes
 
-- For Raspberry Pi, SPI is usually the most reliable PN532 interface.
-- For I2C, the Adafruit driver works best when `reset_pin` and `req_pin`
-  are both connected and declared in `readers.json`.
+- For `ELECHOUSE NFC MODULE V3`, I2C is the simplest wiring because the
+  module already exposes `VCC/GND/SDA/SCL` as a dedicated header.
+- For I2C, the Adafruit driver works best when both `RSTO` and `IRQ`
+  are physically connected and declared as `reset_pin` and `req_pin`.
 - The GUI now shows the configured addressable LED pin and pixel index.
 - `GPIO18` is the default output for the addressable LED status pixel.
 - If a reader is disconnected or fails during startup, the backend keeps
