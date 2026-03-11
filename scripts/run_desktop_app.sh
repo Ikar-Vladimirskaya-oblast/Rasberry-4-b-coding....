@@ -85,6 +85,8 @@ run_chromium() {
     --accept-lang=ru-RU,ru,en-US,en \
     --disable-gpu \
     --disable-features=Translate,UseSkiaRenderer,Vulkan \
+    --disable-extensions \
+    --disable-component-extensions-with-background-pages \
     --password-store=basic \
     --use-mock-keychain \
     --disable-translate \
