@@ -186,7 +186,9 @@ If several readers share one LED strip, keep the same `led_gpio_pin` and
 ## Desktop app on Raspberry Pi
 
 The project now has a real desktop shell, not a browser tab disguised as an
-application. It opens the local GUI inside a native `pywebview` window.
+application. By default it launches the local GUI in `chromium --app` mode,
+which is more stable on Raspberry Pi touchscreens and small HDMI panels.
+If Chromium is unavailable, it falls back to the native `pywebview` shell.
 
 ```bash
 chmod +x scripts/run_backend.sh scripts/run_desktop_app.sh scripts/install_desktop_entry.sh
@@ -197,7 +199,8 @@ This script:
 
 - starts the FastAPI backend if it is not already running,
 - waits until `http://127.0.0.1:8000` is ready,
-- opens a native desktop window through `desktop_app.py`.
+- opens the GUI in a dedicated Chromium app window,
+- falls back to `desktop_app.py` only if Chromium is not available.
 
 If addressable LED mode is enabled, start the backend once from terminal with:
 
@@ -222,10 +225,16 @@ This creates `RFID Local MVP` launchers in `~/Desktop` and
 
 Desktop app files:
 
-- `desktop_app.py` is the native window entrypoint.
-- `scripts/run_desktop_app.sh` starts backend + native window.
+- `desktop_app.py` is the fallback native window entrypoint.
+- `scripts/run_desktop_app.sh` starts backend + desktop window.
 - `scripts/run_backend.sh` starts the backend and escalates to root when
   addressable LEDs require low-level GPIO access.
+
+If you want to force the old native shell for debugging:
+
+```bash
+DESKTOP_APP_ENGINE=pywebview ./scripts/run_desktop_app.sh
+```
 
 ## Mock mode
 
