@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -8,66 +8,65 @@
     <script src="/static/app.js" defer></script>
   </head>
   <body>
-    <div class="page-shell">
-      <header class="hero">
-        <div>
-          <p class="eyebrow">Raspberry Pi Local MVP</p>
-          <h1>RFID Reader Test Stand</h1>
-          <p class="hero-copy">
-            Local FastAPI service for PN532 readers with realtime status,
-            UID capture and SQLite event history.
-          </p>
+    <div class="app-shell">
+      <header class="topbar">
+        <div class="topbar-title">
+          <p class="topbar-kicker">Raspberry Pi Local MVP</p>
+          <h1>RFID / NFC тестовый стенд</h1>
+          <p class="topbar-copy">Локальный сервис для PN532, логов и проверки чтения карт.</p>
         </div>
-        <div class="hero-status">
-          <span class="status-pill" id="systemOnlinePill">Offline</span>
-          <button class="ghost-button" id="refreshButton" type="button">Refresh</button>
+        <div class="topbar-actions">
+          <span class="status-pill" id="systemOnlinePill">Офлайн</span>
+          <button class="ghost-button" id="refreshButton" type="button">Обновить</button>
         </div>
       </header>
 
-      <main class="dashboard">
-        <section class="panel panel-system">
+      <main class="layout">
+        <section class="panel">
           <div class="panel-heading">
             <div>
               <p class="section-label">System Status</p>
-              <h2>Local backend overview</h2>
+              <h2>Состояние системы</h2>
             </div>
             <span class="socket-badge offline" id="socketBadge">WS offline</span>
           </div>
-          <div class="system-grid">
-            <article class="metric-card">
-              <span class="metric-label">Service</span>
-              <strong class="metric-value" id="systemState">Offline</strong>
+          <div class="summary-grid">
+            <article class="summary-card">
+              <span class="metric-label">Backend</span>
+              <strong class="metric-value" id="systemState">Офлайн</strong>
             </article>
-            <article class="metric-card">
-              <span class="metric-label">Readers</span>
+            <article class="summary-card">
+              <span class="metric-label">Ридеры</span>
               <strong class="metric-value" id="readerCount">0</strong>
             </article>
-            <article class="metric-card">
-              <span class="metric-label">Latest event</span>
-              <strong class="metric-value" id="lastEventTime">No events</strong>
+            <article class="summary-card">
+              <span class="metric-label">Последнее событие</span>
+              <strong class="metric-value" id="lastEventTime">Нет событий</strong>
             </article>
           </div>
         </section>
 
-        <section class="panel">
-          <div class="panel-heading">
-            <div>
-              <p class="section-label">Readers</p>
-              <h2>Connected devices</h2>
+        <div class="main-grid">
+          <section class="panel">
+            <div class="panel-heading">
+              <div>
+                <p class="section-label">Readers</p>
+                <h2>Ридеры</h2>
+              </div>
             </div>
-          </div>
-          <div class="readers-grid" id="readersGrid"></div>
-        </section>
+            <div class="readers-grid" id="readersGrid"></div>
+          </section>
 
-        <section class="panel">
-          <div class="panel-heading">
-            <div>
-              <p class="section-label">Events Log</p>
-              <h2>Latest SQLite entries</h2>
+          <section class="panel">
+            <div class="panel-heading">
+              <div>
+                <p class="section-label">Events Log</p>
+                <h2>Журнал событий</h2>
+              </div>
             </div>
-          </div>
-          <div class="log-list" id="logsList"></div>
-        </section>
+            <div class="log-list" id="logsList"></div>
+          </section>
+        </div>
       </main>
     </div>
   </body>

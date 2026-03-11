@@ -17,6 +17,31 @@ const systemOnlinePill = document.getElementById("systemOnlinePill");
 let socket = null;
 let reconnectTimer = null;
 
+function formatStatusLabel(status) {
+  const labels = {
+    online: "Онлайн",
+    offline: "Офлайн",
+    starting: "Запуск",
+    connected: "Подключен",
+    disconnected: "Отключен",
+    error: "Ошибка",
+    scanning: "Сканирование",
+  };
+  return labels[status] || status || "Неизвестно";
+}
+
+function formatModeLabel(mode) {
+  const labels = {
+    hardware: "Железо",
+    mock: "Mock",
+  };
+  return labels[mode] || mode || "Неизвестно";
+}
+
+function formatBoolean(value) {
+  return value ? "Да" : "Нет";
+}
+
 function escapeHtml(value) {
   return String(value)
     .replaceAll("&", "&amp;")
@@ -28,7 +53,7 @@ function escapeHtml(value) {
 
 function formatTimestamp(value) {
   if (!value) {
-    return "Never";
+    return "Никогда";
   }
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? value : date.toLocaleString();
@@ -81,10 +106,10 @@ async function runReaderAction(readerId, action) {
 }
 
 function renderSystem() {
-  systemState.textContent = state.system;
+  systemState.textContent = formatStatusLabel(state.system);
   readerCount.textContent = String(state.readers.length);
-  lastEventTime.textContent = state.logs.length > 0 ? formatTimestamp(state.logs[0].created_at) : "No events";
-  systemOnlinePill.textContent = state.system;
+  lastEventTime.textContent = state.logs.length > 0 ? formatTimestamp(state.logs[0].created_at) : "Нет событий";
+  systemOnlinePill.textContent = formatStatusLabel(state.system);
   systemOnlinePill.className = `status-pill ${state.system === "online" ? "status-connected" : "status-disconnected"}`;
   socketBadge.textContent = state.wsOnline ? "WS online" : "WS offline";
   socketBadge.className = `socket-badge ${state.wsOnline ? "online" : "offline"}`;
@@ -92,23 +117,23 @@ function renderSystem() {
 
 function renderReaders() {
   if (state.readers.length === 0) {
-    readersGrid.innerHTML = '<div class="empty-state">No readers configured.</div>';
+    readersGrid.innerHTML = '<div class="empty-state">Ридеры не настроены.</div>';
     return;
   }
 
   readersGrid.innerHTML = state.readers
     .map((reader) => {
       const lastError = reader.last_error
-        ? `<div><span class="reader-meta-label">Last error</span><div class="reader-meta-value">${escapeHtml(reader.last_error)}</div></div>`
+        ? `<div><span class="reader-meta-label">Последняя ошибка</span><div class="reader-meta-value">${escapeHtml(reader.last_error)}</div></div>`
         : "";
       const ledInfo = reader.led_enabled
         ? `<div>
-              <span class="reader-meta-label">Status LED</span>
+              <span class="reader-meta-label">Светодиод</span>
               <div class="reader-meta-value">${escapeHtml(reader.led_mode)} · GPIO ${escapeHtml(reader.led_gpio_pin)} · pixel ${escapeHtml(reader.led_pixel_index + 1)}/${escapeHtml(reader.led_pixel_count)} · brightness ${escapeHtml(reader.led_brightness)}</div>
             </div>`
         : `<div>
-              <span class="reader-meta-label">Status LED</span>
-              <div class="reader-meta-value">Not configured</div>
+              <span class="reader-meta-label">Светодиод</span>
+              <div class="reader-meta-value">Не настроен</div>
             </div>`;
 
       return `
@@ -119,26 +144,26 @@ function renderReaders() {
               <p class="reader-subtitle">${escapeHtml(reader.id)} · ${escapeHtml(reader.type.toUpperCase())} · ${escapeHtml(reader.interface.toUpperCase())}</p>
             </div>
             <div class="badge-stack">
-              <span class="reader-badge ${statusClass(reader.status)}">${escapeHtml(reader.status)}</span>
-              <span class="reader-badge mode-${escapeHtml(reader.mode)}">${escapeHtml(reader.mode)}</span>
+              <span class="reader-badge ${statusClass(reader.status)}">${escapeHtml(formatStatusLabel(reader.status))}</span>
+              <span class="reader-badge mode-${escapeHtml(reader.mode)}">${escapeHtml(formatModeLabel(reader.mode))}</span>
             </div>
           </div>
           <div class="reader-grid">
             <div>
-              <span class="reader-meta-label">Last UID</span>
-              <div class="reader-meta-value">${escapeHtml(reader.last_uid || "No scans yet")}</div>
+              <span class="reader-meta-label">Последний UID</span>
+              <div class="reader-meta-value">${escapeHtml(reader.last_uid || "Сканов пока не было")}</div>
             </div>
             <div>
-              <span class="reader-meta-label">Last seen</span>
+              <span class="reader-meta-label">Последнее чтение</span>
               <div class="reader-meta-value">${escapeHtml(formatTimestamp(reader.last_seen))}</div>
             </div>
             <div>
-              <span class="reader-meta-label">Enabled</span>
-              <div class="reader-meta-value">${reader.enabled ? "Yes" : "No"}</div>
+              <span class="reader-meta-label">Включен</span>
+              <div class="reader-meta-value">${formatBoolean(reader.enabled)}</div>
             </div>
             <div>
-              <span class="reader-meta-label">Mode</span>
-              <div class="reader-meta-value">${escapeHtml(reader.mode)}</div>
+              <span class="reader-meta-label">Режим</span>
+              <div class="reader-meta-value">${escapeHtml(formatModeLabel(reader.mode))}</div>
             </div>
             ${ledInfo}
             ${lastError}
@@ -149,14 +174,14 @@ function renderReaders() {
               data-reader-action="scan:${escapeHtml(reader.id)}"
               type="button"
             >
-              Scan test
+              Тест скан
             </button>
             <button
               class="action-button secondary"
               data-reader-action="reset:${escapeHtml(reader.id)}"
               type="button"
             >
-              Reset
+              Сброс
             </button>
           </div>
         </article>
@@ -167,7 +192,7 @@ function renderReaders() {
 
 function renderLogs() {
   if (state.logs.length === 0) {
-    logsList.innerHTML = '<div class="empty-state">No events recorded yet.</div>';
+    logsList.innerHTML = '<div class="empty-state">Событий пока нет.</div>';
     return;
   }
 
@@ -270,7 +295,7 @@ document.addEventListener("click", (event) => {
 });
 
 refreshButton.addEventListener("click", () => {
-  loadInitialData().catch((error) => window.alert(`Refresh failed: ${error.message}`));
+  loadInitialData().catch((error) => window.alert(`Не удалось обновить данные: ${error.message}`));
 });
 
 loadInitialData()
