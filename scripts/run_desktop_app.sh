@@ -11,8 +11,20 @@ APP_TITLE="${DESKTOP_APP_TITLE:-RFID Local MVP}"
 WINDOW_CLASS="${DESKTOP_APP_CLASS:-rfid-local-mvp}"
 ENGINE="${DESKTOP_APP_ENGINE:-chromium}"
 CHROMIUM_BIN="${DESKTOP_APP_CHROMIUM_BIN:-}"
-LOG_FILE="$APP_DIR/app.log"
-CHROMIUM_PROFILE_DIR="$APP_DIR/.cache/chromium-app"
+STATE_HOME="${XDG_STATE_HOME:-$HOME/.local/state}"
+CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
+APP_RUNTIME_DIR="${RFID_APP_RUNTIME_DIR:-}"
+
+if [[ -z "$APP_RUNTIME_DIR" ]]; then
+  if [[ -w "$APP_DIR" ]]; then
+    APP_RUNTIME_DIR="$APP_DIR/.runtime"
+  else
+    APP_RUNTIME_DIR="$STATE_HOME/rfid-local-mvp"
+  fi
+fi
+
+LOG_FILE="${RFID_APP_LOG_FILE:-$APP_RUNTIME_DIR/launcher.log}"
+CHROMIUM_PROFILE_DIR="${RFID_APP_CHROMIUM_PROFILE_DIR:-$CACHE_HOME/rfid-local-mvp/chromium-app}"
 
 find_chromium() {
   local candidate
@@ -47,6 +59,8 @@ if [[ ! -x "$BACKEND_LAUNCHER" || ! -x "$DESKTOP_PYTHON" || ! -f "$DESKTOP_ENTRY
   echo "Create it first: python3 -m venv .venv && .venv/bin/pip install -r requirements.txt"
   exit 1
 fi
+
+mkdir -p "$(dirname "$LOG_FILE")" "$CHROMIUM_PROFILE_DIR"
 
 if [[ -z "${DISPLAY:-}" && -z "${WAYLAND_DISPLAY:-}" ]]; then
   echo "Desktop session is not available. Launch this script from Raspberry Pi desktop."
