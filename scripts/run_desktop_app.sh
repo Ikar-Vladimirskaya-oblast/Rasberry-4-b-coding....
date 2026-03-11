@@ -81,6 +81,8 @@ run_chromium() {
     --user-data-dir="$CHROMIUM_PROFILE_DIR" \
     --class="$WINDOW_CLASS" \
     --window-size=1280,800 \
+    --lang=ru \
+    --accept-lang=ru-RU,ru,en-US,en \
     --disable-gpu \
     --disable-features=Translate,UseSkiaRenderer,Vulkan \
     --password-store=basic \
