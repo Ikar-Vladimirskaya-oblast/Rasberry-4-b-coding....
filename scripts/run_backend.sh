@@ -4,6 +4,16 @@ set -euo pipefail
 APP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 VENV_PYTHON="$APP_DIR/.venv/bin/python"
 CONFIG_FILE="${READERS_CONFIG_PATH:-$APP_DIR/readers.json}"
+NO_ESCALATE=0
+
+if [[ "${1:-}" == "--needs-root-check" ]]; then
+  MODE="needs-root-check"
+elif [[ "${1:-}" == "--no-escalate" ]]; then
+  MODE="run"
+  NO_ESCALATE=1
+else
+  MODE="run"
+fi
 
 needs_root_for_addressable_led() {
   "$VENV_PYTHON" - "$CONFIG_FILE" <<'PY'
@@ -41,7 +51,14 @@ if [[ ! -x "$VENV_PYTHON" ]]; then
   exit 1
 fi
 
-if [[ "$(needs_root_for_addressable_led)" == "1" && "${EUID}" -ne 0 ]]; then
+if [[ "$MODE" == "needs-root-check" ]]; then
+  if [[ "$(needs_root_for_addressable_led)" == "1" ]]; then
+    exit 0
+  fi
+  exit 1
+fi
+
+if [[ "$NO_ESCALATE" -eq 0 && "$(needs_root_for_addressable_led)" == "1" && "${EUID}" -ne 0 ]]; then
   echo "Addressable LED mode detected. Restarting backend with sudo."
   exec sudo -E "$VENV_PYTHON" "$APP_DIR/main.py"
 fi

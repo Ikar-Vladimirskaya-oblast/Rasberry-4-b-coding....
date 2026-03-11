@@ -5,3 +5,4 @@ gpiozero
 rpi_ws281x
 adafruit-blinka
 adafruit-circuitpython-pn532
+pywebview

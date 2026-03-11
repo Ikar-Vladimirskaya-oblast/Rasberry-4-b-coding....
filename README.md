@@ -8,6 +8,7 @@ SQLite event storage and a lightweight test GUI.
 ```text
 .
 |-- main.py
+|-- desktop_app.py
 |-- config.py
 |-- requirements.txt
 |-- readers.json
@@ -64,7 +65,7 @@ SQLite event storage and a lightweight test GUI.
 
    ```bash
    sudo apt update
-   sudo apt install -y python3-venv python3-pip python3-dev python3-smbus i2c-tools libgpiod3 python3-libgpiod
+   sudo apt install -y python3-venv python3-pip python3-dev python3-smbus i2c-tools libgpiod3 python3-libgpiod python3-gi gir1.2-webkit2-4.1
    ```
 
 2. Enable the hardware interface you need:
@@ -184,11 +185,11 @@ If several readers share one LED strip, keep the same `led_gpio_pin` and
 
 ## Desktop app on Raspberry Pi
 
-If you want it to look like an application instead of a normal browser tab,
-use Chromium app mode on the Raspberry Pi desktop:
+The project now has a real desktop shell, not a browser tab disguised as an
+application. It opens the local GUI inside a native `pywebview` window.
 
 ```bash
-chmod +x scripts/run_desktop_app.sh scripts/install_desktop_entry.sh
+chmod +x scripts/run_backend.sh scripts/run_desktop_app.sh scripts/install_desktop_entry.sh
 ./scripts/run_desktop_app.sh
 ```
 
@@ -196,7 +197,7 @@ This script:
 
 - starts the FastAPI backend if it is not already running,
 - waits until `http://127.0.0.1:8000` is ready,
-- opens Chromium in `--app` mode without browser chrome.
+- opens a native desktop window through `desktop_app.py`.
 
 If addressable LED mode is enabled, start the backend once from terminal with:
 
@@ -218,6 +219,13 @@ To install a desktop icon on Raspberry Pi:
 
 This creates `RFID Local MVP` launchers in `~/Desktop` and
 `~/.local/share/applications`.
+
+Desktop app files:
+
+- `desktop_app.py` is the native window entrypoint.
+- `scripts/run_desktop_app.sh` starts backend + native window.
+- `scripts/run_backend.sh` starts the backend and escalates to root when
+  addressable LEDs require low-level GPIO access.
 
 ## Mock mode
 

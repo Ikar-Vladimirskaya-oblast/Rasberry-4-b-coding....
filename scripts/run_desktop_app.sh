@@ -3,20 +3,9 @@ set -euo pipefail
 
 APP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BACKEND_LAUNCHER="$APP_DIR/scripts/run_backend.sh"
+DESKTOP_PYTHON="$APP_DIR/.venv/bin/python"
+DESKTOP_ENTRYPOINT="$APP_DIR/desktop_app.py"
 LOG_FILE="$APP_DIR/app.log"
-APP_URL="http://127.0.0.1:8000/"
-PROFILE_DIR="$APP_DIR/.desktop-profile"
-
-find_browser() {
-  local candidate
-  for candidate in chromium-browser chromium google-chrome; do
-    if command -v "$candidate" >/dev/null 2>&1; then
-      command -v "$candidate"
-      return 0
-    fi
-  done
-  return 1
-}
 
 wait_for_backend() {
   local attempt
@@ -29,8 +18,8 @@ wait_for_backend() {
   return 1
 }
 
-if [[ ! -x "$BACKEND_LAUNCHER" ]]; then
-  echo "Missing backend launcher: $BACKEND_LAUNCHER"
+if [[ ! -x "$BACKEND_LAUNCHER" || ! -x "$DESKTOP_PYTHON" || ! -f "$DESKTOP_ENTRYPOINT" ]]; then
+  echo "Desktop app files are incomplete."
   echo "Create it first: python3 -m venv .venv && .venv/bin/pip install -r requirements.txt"
   exit 1
 fi
@@ -41,23 +30,21 @@ if [[ -z "${DISPLAY:-}" && -z "${WAYLAND_DISPLAY:-}" ]]; then
 fi
 
 if ! curl -fsS "http://127.0.0.1:8000/api/status" >/dev/null 2>&1; then
-  nohup "$BACKEND_LAUNCHER" >>"$LOG_FILE" 2>&1 &
+  if "$BACKEND_LAUNCHER" --needs-root-check; then
+    if command -v pkexec >/dev/null 2>&1; then
+      pkexec /bin/sh -lc "cd '$APP_DIR' && nohup '$BACKEND_LAUNCHER' --no-escalate >>'$LOG_FILE' 2>&1 &"
+    else
+      echo "Addressable LED mode requires root. Start backend manually: sudo ./scripts/run_backend.sh"
+      exit 1
+    fi
+  else
+    nohup "$BACKEND_LAUNCHER" --no-escalate >>"$LOG_FILE" 2>&1 &
+  fi
+
   if ! wait_for_backend; then
     echo "Backend failed to start. Check $LOG_FILE"
     exit 1
   fi
 fi
 
-BROWSER_BIN="$(find_browser || true)"
-if [[ -z "$BROWSER_BIN" ]]; then
-  echo "Chromium was not found. Install it on Raspberry Pi first."
-  exit 1
-fi
-
-mkdir -p "$PROFILE_DIR"
-exec "$BROWSER_BIN" \
-  --app="$APP_URL" \
-  --user-data-dir="$PROFILE_DIR" \
-  --class=rfid-local-mvp \
-  --new-window \
-  --window-size=1280,900
+exec "$DESKTOP_PYTHON" "$DESKTOP_ENTRYPOINT"
