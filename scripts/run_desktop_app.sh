@@ -83,6 +83,8 @@ run_chromium() {
     --window-size=1280,800 \
     --disable-gpu \
     --disable-features=UseSkiaRenderer,Vulkan \
+    --password-store=basic \
+    --use-mock-keychain \
     --disable-session-crashed-bubble \
     --disable-infobars \
     --no-default-browser-check \
