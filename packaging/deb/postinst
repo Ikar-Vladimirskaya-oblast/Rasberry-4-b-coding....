@@ -1,0 +1,21 @@
+#!/bin/sh
+set -e
+
+APP_DIR="/opt/rfid-local-mvp"
+DATA_DIR="/var/lib/rfid-local-mvp"
+SERVICE_NAME="rfid-local-mvp.service"
+
+mkdir -p "$DATA_DIR"
+
+if [ -x "$APP_DIR/scripts/bootstrap_runtime.sh" ]; then
+  RFID_APP_VENV_DIR="$APP_DIR/.venv" \
+  RFID_APP_WHEEL_DIR="$APP_DIR/vendor/wheels" \
+  RFID_APP_REQUIREMENTS_FILE="$APP_DIR/requirements.txt" \
+  "$APP_DIR/scripts/bootstrap_runtime.sh"
+fi
+
+if command -v systemctl >/dev/null 2>&1; then
+  systemctl daemon-reload || true
+  systemctl enable "$SERVICE_NAME" >/dev/null 2>&1 || true
+  systemctl restart "$SERVICE_NAME" || true
+fi

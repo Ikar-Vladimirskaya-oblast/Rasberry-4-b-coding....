@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=RFID Local MVP
+Comment=PN532 test stand for Raspberry Pi
+Exec=/usr/bin/rfid-local-mvp
+Icon=rfid-local-mvp
+Terminal=false
+Categories=Utility;Development;
+StartupNotify=true

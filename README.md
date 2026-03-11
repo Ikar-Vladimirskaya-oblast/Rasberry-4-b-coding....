@@ -236,6 +236,40 @@ If you want to force the old native shell for debugging:
 DESKTOP_APP_ENGINE=pywebview ./scripts/run_desktop_app.sh
 ```
 
+## Debian package
+
+For Raspberry Pi OS the recommended distributable format is `.deb`, not
+AppImage. This repository can build an installable Debian package with:
+
+```bash
+chmod +x scripts/build_deb.sh
+./scripts/build_deb.sh --version 0.1.0
+```
+
+The package will be written to `./dist`, for example:
+
+```text
+dist/rfid-local-mvp_0.1.0_arm64.deb
+```
+
+What the `.deb` installs:
+
+- application files in `/opt/rfid-local-mvp`
+- editable config in `/etc/rfid-local-mvp/readers.json`
+- SQLite data in `/var/lib/rfid-local-mvp/events.db`
+- systemd service `rfid-local-mvp.service`
+- menu entry and desktop launcher `RFID Local MVP`
+
+To install on Raspberry Pi:
+
+```bash
+sudo apt install ./dist/rfid-local-mvp_0.1.0_arm64.deb
+```
+
+The installer bootstraps the Python runtime in `/opt/rfid-local-mvp/.venv`.
+If wheels were bundled during build, installation works without downloading
+Python packages from the internet.
+
 ## Mock mode
 
 The repository default is now real hardware mode. For development without
