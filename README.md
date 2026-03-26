@@ -87,6 +87,16 @@ SQLite event storage and a lightweight test GUI.
    pip install -r requirements.txt
    ```
 
+4. Tune Raspberry Pi for the multiplexer-based I2C layout:
+
+   ```bash
+   sudo ./scripts/configure_pi_i2c_mux.sh
+   sudo reboot
+   ```
+
+   This keeps `i2c_arm` enabled and sets a more conservative I2C baudrate
+   for `TCA9548A + multiple PN532` wiring on longer jumper runs.
+
 ## Run the project
 
 ```bash
