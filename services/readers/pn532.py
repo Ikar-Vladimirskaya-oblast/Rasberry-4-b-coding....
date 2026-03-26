@@ -68,7 +68,13 @@ class _MuxedI2CBus:
         with self._selection_lock:
             if self._selection_cache.get(cache_key) == self._channel_mask:
                 return
-            self._i2c_bus.writeto(self._mux_address, bytes([self._channel_mask]))
+            try:
+                self._i2c_bus.writeto(self._mux_address, bytes([self._channel_mask]))
+            except OSError as exc:
+                channel = self._channel_mask.bit_length() - 1
+                raise RuntimeError(
+                    f"TCA9548A did not respond at 0x{self._mux_address:02X} while selecting channel {channel}"
+                ) from exc
             self._selection_cache[cache_key] = self._channel_mask
 
 
