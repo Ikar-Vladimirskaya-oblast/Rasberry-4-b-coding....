@@ -13,7 +13,7 @@ class _MuxedI2CBus:
     _selection_cache: ClassVar[dict[tuple[int, int], int]] = {}
     _selection_lock: ClassVar[Lock] = Lock()
 
-    def __init__(self, i2c_bus: Any, mux_address: int, channel: int) -> None:
+    def __init__(self, i2c_bus: Any, mux_address: int | None, channel: int) -> None:
         if not 0 <= channel <= 7:
             raise ValueError(f"Invalid TCA9548A channel: {channel}")
         self._i2c_bus = i2c_bus
@@ -64,18 +64,36 @@ class _MuxedI2CBus:
         )
 
     def _select_channel_locked(self) -> None:
-        cache_key = (id(self._i2c_bus), self._mux_address)
         with self._selection_lock:
+            mux_address = self._ensure_mux_address_locked()
+            cache_key = (id(self._i2c_bus), mux_address)
             if self._selection_cache.get(cache_key) == self._channel_mask:
                 return
             try:
-                self._i2c_bus.writeto(self._mux_address, bytes([self._channel_mask]))
+                self._i2c_bus.writeto(mux_address, bytes([self._channel_mask]))
             except OSError as exc:
                 channel = self._channel_mask.bit_length() - 1
                 raise RuntimeError(
-                    f"TCA9548A did not respond at 0x{self._mux_address:02X} while selecting channel {channel}"
+                    f"TCA9548A did not respond at 0x{mux_address:02X} while selecting channel {channel}"
                 ) from exc
             self._selection_cache[cache_key] = self._channel_mask
+
+    def _ensure_mux_address_locked(self) -> int:
+        if self._mux_address is not None:
+            return self._mux_address
+
+        for candidate in range(0x70, 0x78):
+            try:
+                self._i2c_bus.writeto(candidate, bytes([self._channel_mask]))
+            except OSError:
+                continue
+            self._mux_address = candidate
+            return candidate
+
+        channel = self._channel_mask.bit_length() - 1
+        raise RuntimeError(
+            f"TCA9548A was not detected on addresses 0x70-0x77 while selecting channel {channel}"
+        )
 
 
 class PN532Reader(ReaderBase):
@@ -186,7 +204,7 @@ class PN532Reader(ReaderBase):
             if self.settings.i2c_mux_address is not None and self.settings.i2c_mux_channel is None:
                 raise ValueError("i2c_mux_channel is required when i2c_mux_address is set.")
             if self.settings.i2c_mux_channel is not None:
-                mux_address = self.settings.i2c_mux_address or 0x70
+                mux_address = self.settings.i2c_mux_address
                 i2c = _MuxedI2CBus(i2c, mux_address=mux_address, channel=self.settings.i2c_mux_channel)
 
             kwargs: dict[str, Any] = {"debug": False}
