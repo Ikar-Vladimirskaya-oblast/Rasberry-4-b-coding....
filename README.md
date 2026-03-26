@@ -109,7 +109,7 @@ Open the GUI from another machine on the local network:
 The default `readers.json` in this repository is now configured for:
 
 - `6 x PN532` over `I2C`
-- `TCA9548A` multiplexer on bus address `0x70`
+- `TCA9548A` multiplexer with auto-detect on bus addresses `0x70..0x77`
 - PN532 bus address `0x24`
 - reader channels `0..5`
 - status LEDs disabled by default in the 6-reader config
@@ -132,7 +132,7 @@ Connect the multiplexer to the Raspberry Pi main I2C bus:
 | `SDA` | `SDA1` | `GPIO2` | `3` |
 | `SCL` | `SCL1` | `GPIO3` | `5` |
 
-Default software address in this repo: `0x70`
+Default software behavior in this repo: auto-detect mux on `0x70..0x77`
 
 ### PN532 to TCA9548A
 

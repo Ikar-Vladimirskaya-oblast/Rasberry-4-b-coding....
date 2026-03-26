@@ -163,10 +163,38 @@ def _load_readers_config(config_path: Path, force_mock: bool) -> list[ReaderSett
             data = json.load(handle)
 
     readers = [ReaderSettings.from_dict(entry, force_mock=force_mock) for entry in data]
+    _normalize_mux_readers(readers)
     if not readers:
         LOGGER.warning("Reader config is empty, falling back to built-in mock config.")
         readers = [ReaderSettings.from_dict(entry, force_mock=force_mock) for entry in DEFAULT_READER_CONFIG]
     return readers
+
+
+def _normalize_mux_readers(readers: list[ReaderSettings]) -> None:
+    mux_readers = [
+        reader
+        for reader in readers
+        if reader.interface == "i2c" and (reader.i2c_mux_address is not None or reader.i2c_mux_channel is not None)
+    ]
+    if not mux_readers:
+        return
+
+    used_channels = {reader.i2c_mux_channel for reader in mux_readers if reader.i2c_mux_channel is not None}
+    next_channel = 0
+    detected_mux_address = next(
+        (reader.i2c_mux_address for reader in mux_readers if reader.i2c_mux_address is not None),
+        None,
+    )
+
+    for reader in mux_readers:
+        if reader.i2c_mux_channel is None:
+            while next_channel in used_channels:
+                next_channel += 1
+            reader.i2c_mux_channel = next_channel
+            used_channels.add(next_channel)
+
+        if reader.i2c_mux_address is None:
+            reader.i2c_mux_address = detected_mux_address
 
 
 def load_settings(project_root: Path | None = None) -> AppSettings:
