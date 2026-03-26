@@ -10,9 +10,15 @@ const logsList = document.getElementById("logsList");
 const refreshButton = document.getElementById("refreshButton");
 const systemState = document.getElementById("systemState");
 const readerCount = document.getElementById("readerCount");
+const connectedReaderCount = document.getElementById("connectedReaderCount");
 const lastEventTime = document.getElementById("lastEventTime");
 const socketBadge = document.getElementById("socketBadge");
 const systemOnlinePill = document.getElementById("systemOnlinePill");
+const readerSlotCount = document.getElementById("readerSlotCount");
+const readerOnlineCount = document.getElementById("readerOnlineCount");
+const readerPendingCount = document.getElementById("readerPendingCount");
+
+const desiredReaderSlots = Math.max(1, Number.parseInt(document.body.dataset.readerSlots || "6", 10) || 6);
 
 let socket = null;
 let reconnectTimer = null;
@@ -63,6 +69,54 @@ function statusClass(status) {
   return `status-${status || "disconnected"}`;
 }
 
+function targetReaderSlots() {
+  return Math.max(desiredReaderSlots, state.readers.length);
+}
+
+function countOnlineReaders() {
+  return state.readers.filter((reader) => ["connected", "scanning"].includes(reader.status)).length;
+}
+
+function detectReaderSlot(reader, fallbackIndex) {
+  const candidates = [reader.id, reader.name];
+  for (const candidate of candidates) {
+    const match = String(candidate || "").match(/(\d+)(?!.*\d)/);
+    if (!match) {
+      continue;
+    }
+    const slot = Number.parseInt(match[1], 10);
+    if (Number.isInteger(slot) && slot > 0) {
+      return slot;
+    }
+  }
+  return fallbackIndex + 1;
+}
+
+function buildReaderSlots() {
+  const slots = Array.from({ length: targetReaderSlots() }, (_, index) => ({
+    slot: index + 1,
+    reader: null,
+  }));
+
+  const orderedReaders = [...state.readers].sort(
+    (left, right) => detectReaderSlot(left, 0) - detectReaderSlot(right, 0),
+  );
+
+  orderedReaders.forEach((reader, index) => {
+    let slotIndex = detectReaderSlot(reader, index) - 1;
+    while (slotIndex < slots.length && slots[slotIndex].reader !== null) {
+      slotIndex += 1;
+    }
+    if (slotIndex >= slots.length) {
+      slots.push({ slot: slots.length + 1, reader });
+      return;
+    }
+    slots[slotIndex].reader = reader;
+  });
+
+  return slots;
+}
+
 function wsUrl() {
   const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
   return `${protocol}//${window.location.host}/ws`;
@@ -106,23 +160,58 @@ async function runReaderAction(readerId, action) {
 }
 
 function renderSystem() {
+  const slotCount = targetReaderSlots();
+  const onlineCount = countOnlineReaders();
   systemState.textContent = formatStatusLabel(state.system);
-  readerCount.textContent = String(state.readers.length);
+  readerCount.textContent = `${state.readers.length} / ${slotCount}`;
+  connectedReaderCount.textContent = String(onlineCount);
   lastEventTime.textContent = state.logs.length > 0 ? formatTimestamp(state.logs[0].created_at) : "Нет событий";
   systemOnlinePill.textContent = formatStatusLabel(state.system);
   systemOnlinePill.className = `status-pill ${state.system === "online" ? "status-connected" : "status-disconnected"}`;
   socketBadge.textContent = state.wsOnline ? "WS online" : "WS offline";
   socketBadge.className = `socket-badge ${state.wsOnline ? "online" : "offline"}`;
+  readerSlotCount.textContent = String(slotCount);
+  readerOnlineCount.textContent = String(onlineCount);
+  readerPendingCount.textContent = String(Math.max(slotCount - state.readers.length, 0));
 }
 
 function renderReaders() {
-  if (state.readers.length === 0) {
-    readersGrid.innerHTML = '<div class="empty-state">Ридеры не настроены.</div>';
-    return;
-  }
+  readersGrid.innerHTML = buildReaderSlots()
+    .map(({ slot, reader }) => {
+      if (!reader) {
+        return `
+          <article class="reader-card reader-card--placeholder">
+            <div class="reader-header">
+              <div>
+                <h3 class="reader-title">Слот ${slot}</h3>
+                <p class="reader-subtitle">Ридер ещё не настроен в backend</p>
+              </div>
+              <div class="badge-stack">
+                <span class="reader-badge status-disconnected">Ожидание</span>
+              </div>
+            </div>
+            <div class="reader-grid">
+              <div>
+                <span class="reader-meta-label">Назначение</span>
+                <div class="reader-meta-value">Ридер через мультиплексор</div>
+              </div>
+              <div>
+                <span class="reader-meta-label">Статус</span>
+                <div class="reader-meta-value">Нет данных</div>
+              </div>
+              <div>
+                <span class="reader-meta-label">Последний UID</span>
+                <div class="reader-meta-value">Нет чтения</div>
+              </div>
+              <div>
+                <span class="reader-meta-label">Последнее чтение</span>
+                <div class="reader-meta-value">Никогда</div>
+              </div>
+            </div>
+          </article>
+        `;
+      }
 
-  readersGrid.innerHTML = state.readers
-    .map((reader) => {
       const lastError = reader.last_error
         ? `<div><span class="reader-meta-label">Последняя ошибка</span><div class="reader-meta-value">${escapeHtml(reader.last_error)}</div></div>`
         : "";
@@ -140,6 +229,7 @@ function renderReaders() {
         <article class="reader-card">
           <div class="reader-header">
             <div>
+              <div class="reader-slot">Слот ${slot}</div>
               <h3 class="reader-title">${escapeHtml(reader.name)}</h3>
               <p class="reader-subtitle">${escapeHtml(reader.id)} · ${escapeHtml(reader.type.toUpperCase())} · ${escapeHtml(reader.interface.toUpperCase())}</p>
             </div>

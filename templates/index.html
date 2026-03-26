@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="/static/styles.css" />
     <script src="/static/app.js" defer></script>
   </head>
-  <body>
+  <body data-reader-slots="6">
     <div class="app-shell">
       <header class="topbar">
         <div class="topbar-title">
@@ -36,8 +36,12 @@
               <strong class="metric-value" id="systemState">Офлайн</strong>
             </article>
             <article class="summary-card">
-              <span class="metric-label">Ридеры</span>
-              <strong class="metric-value" id="readerCount">0</strong>
+              <span class="metric-label">Настроено / слотов</span>
+              <strong class="metric-value" id="readerCount">0 / 6</strong>
+            </article>
+            <article class="summary-card">
+              <span class="metric-label">Подключено</span>
+              <strong class="metric-value" id="connectedReaderCount">0</strong>
             </article>
             <article class="summary-card">
               <span class="metric-label">Последнее событие</span>
@@ -46,27 +50,39 @@
           </div>
         </section>
 
-        <div class="main-grid">
-          <section class="panel">
-            <div class="panel-heading">
-              <div>
-                <p class="section-label">Readers</p>
-                <h2>Ридеры</h2>
-              </div>
+        <section class="panel panel-readers">
+          <div class="panel-heading">
+            <div>
+              <p class="section-label">Readers</p>
+              <h2>Ридеры 1-6</h2>
             </div>
-            <div class="readers-grid" id="readersGrid"></div>
-          </section>
+          </div>
+          <div class="readers-toolbar">
+            <div class="reader-stat">
+              <span class="reader-stat-label">Слотов</span>
+              <strong class="reader-stat-value" id="readerSlotCount">6</strong>
+            </div>
+            <div class="reader-stat">
+              <span class="reader-stat-label">Подключено</span>
+              <strong class="reader-stat-value" id="readerOnlineCount">0</strong>
+            </div>
+            <div class="reader-stat">
+              <span class="reader-stat-label">Ожидается</span>
+              <strong class="reader-stat-value" id="readerPendingCount">6</strong>
+            </div>
+          </div>
+          <div class="readers-grid" id="readersGrid"></div>
+        </section>
 
-          <section class="panel">
-            <div class="panel-heading">
-              <div>
-                <p class="section-label">Events Log</p>
-                <h2>Журнал событий</h2>
-              </div>
+        <section class="panel panel-logs">
+          <div class="panel-heading">
+            <div>
+              <p class="section-label">Events Log</p>
+              <h2>Журнал событий</h2>
             </div>
-            <div class="log-list" id="logsList"></div>
-          </section>
-        </div>
+          </div>
+          <div class="log-list" id="logsList"></div>
+        </section>
       </main>
     </div>
   </body>

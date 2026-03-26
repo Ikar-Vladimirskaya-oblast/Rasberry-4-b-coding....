@@ -102,7 +102,6 @@ body {
 }
 
 .summary-grid,
-.main-grid,
 .readers-grid {
   display: grid;
   gap: 16px;
@@ -112,13 +111,8 @@ body {
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
 }
 
-.main-grid {
-  grid-template-columns: minmax(480px, 1.2fr) minmax(360px, 0.8fr);
-  align-items: start;
-}
-
 .readers-grid {
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .summary-card,
@@ -153,6 +147,11 @@ body {
   gap: 12px;
 }
 
+.reader-card--placeholder {
+  border-style: dashed;
+  background: #fbfcfd;
+}
+
 .reader-header {
   display: flex;
   justify-content: space-between;
@@ -160,8 +159,23 @@ body {
   align-items: flex-start;
 }
 
+.reader-slot {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #eef4ff;
+  border: 1px solid #cfe0fb;
+  color: #295c8f;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
 .reader-title {
-  margin: 0;
+  margin: 8px 0 0;
   font-size: 1.05rem;
 }
 
@@ -188,6 +202,32 @@ body {
   gap: 10px;
   flex-wrap: wrap;
   padding-top: 4px;
+}
+
+.readers-toolbar {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.reader-stat {
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--panel-alt);
+}
+
+.reader-stat-label {
+  display: block;
+  color: var(--text-dim);
+  font-size: 0.82rem;
+}
+
+.reader-stat-value {
+  display: block;
+  margin-top: 8px;
+  font-size: 1.2rem;
 }
 
 button {
@@ -300,7 +340,8 @@ button {
 .log-list {
   display: grid;
   gap: 12px;
-  max-height: 720px;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  max-height: 420px;
   overflow: auto;
 }
 
@@ -334,6 +375,12 @@ button {
   text-align: center;
 }
 
+@media (max-width: 1180px) {
+  .readers-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 @media (max-width: 780px) {
   .app-shell {
     width: min(100% - 16px, 1320px);
@@ -351,8 +398,13 @@ button {
     justify-content: space-between;
   }
 
-  .main-grid,
+  .readers-toolbar,
+  .readers-grid,
   .reader-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .log-list {
     grid-template-columns: 1fr;
   }
 }
