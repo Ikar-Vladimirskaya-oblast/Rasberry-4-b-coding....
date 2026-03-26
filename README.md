@@ -108,11 +108,11 @@ Open the GUI from another machine on the local network:
 
 The default `readers.json` in this repository is now configured for:
 
-- `PN532` over `I2C`
-- bus address `0x24`
-- reset on `GPIO25`
-- IRQ/REQ on `GPIO24`
-- addressable `WS2812/NeoPixel` on `GPIO18`
+- `6 x PN532` over `I2C`
+- `TCA9548A` multiplexer on bus address `0x70`
+- PN532 bus address `0x24`
+- reader channels `0..5`
+- status LEDs disabled by default in the 6-reader config
 
 If you want to go back to mock mode, copy `readers.mock.json` over
 `readers.json` or export `APP_MOCK_ALL_READERS=true`.
@@ -121,7 +121,38 @@ If you want to go back to mock mode, copy `readers.mock.json` over
 
 Recommended mode for this repo: `I2C`
 
-### PN532 to Raspberry Pi
+### TCA9548A to Raspberry Pi
+
+Connect the multiplexer to the Raspberry Pi main I2C bus:
+
+| Pin on TCA9548A | Connect to Raspberry Pi | GPIO | Physical pin |
+|---|---|---:|---:|
+| `VIN` | `3.3V` | - | `1` |
+| `GND` | `GND` | - | `6` |
+| `SDA` | `SDA1` | `GPIO2` | `3` |
+| `SCL` | `SCL1` | `GPIO3` | `5` |
+
+Default software address in this repo: `0x70`
+
+### PN532 to TCA9548A
+
+Each PN532 reader connects to its own TCA9548A channel:
+
+- reader 1 -> channel `0`
+- reader 2 -> channel `1`
+- reader 3 -> channel `2`
+- reader 4 -> channel `3`
+- reader 5 -> channel `4`
+- reader 6 -> channel `5`
+
+For each PN532 on its channel:
+
+- `VCC` -> `3.3V`
+- `GND` -> `GND`
+- `SDA` -> channel `SDx`
+- `SCL` -> channel `SCx`
+
+### Direct PN532 pin names
 
 Your board is `ELECHOUSE NFC MODULE V3`. For I2C, use the pins that are
 written directly on the module: `GND`, `VCC`, `SDA`, `SCL`, `RSTO`, `IRQ`.
@@ -132,8 +163,8 @@ written directly on the module: `GND`, `VCC`, `SDA`, `SCL`, `RSTO`, `IRQ`.
 | `GND` | `GND` | - | `6` |
 | `SDA` | `SDA1` | `GPIO2` | `3` |
 | `SCL` | `SCL1` | `GPIO3` | `5` |
-| `RSTO` | reset line | `GPIO25` | `22` |
-| `IRQ` | request/interrupt | `GPIO24` | `18` |
+| `RSTO` | optional reset line | `GPIO25` | `22` |
+| `IRQ` | optional request/interrupt | `GPIO24` | `18` |
 
 Самая простая распиновка в одну строку:
 
@@ -141,8 +172,8 @@ written directly on the module: `GND`, `VCC`, `SDA`, `SCL`, `RSTO`, `IRQ`.
 - module `GND` -> Pi pin `6`
 - module `SDA` -> Pi pin `3`
 - module `SCL` -> Pi pin `5`
-- module `RSTO` -> Pi pin `22`
-- module `IRQ` -> Pi pin `18`
+- module `RSTO` -> Pi pin `22` `optional`
+- module `IRQ` -> Pi pin `18` `optional`
 
 На самом модуле выставь переключатели режима в `I2C` по маркировке на плате
 перед включением питания.
@@ -154,10 +185,8 @@ written directly on the module: `GND`, `VCC`, `SDA`, `SCL`, `RSTO`, `IRQ`.
 - `SDA`
 - `SCL`
 
-Для более стабильной работы потом обязательно добавь:
-
-- `RSTO`
-- `IRQ`
+Для мультиплексора в этом проекте `RSTO` и `IRQ` считаются опциональными,
+потому что обычно разводят только питание и `SDA/SCL` через `TCA9548A`.
 
 ### Addressable LED to Raspberry Pi
 
