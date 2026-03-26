@@ -60,6 +60,8 @@ class ReaderSettings:
     scan_cooldown_seconds: float = 2.0
     reconnect_interval: float = 5.0
     i2c_address: int = 0x24
+    i2c_mux_address: int | None = None
+    i2c_mux_channel: int | None = None
     scl_pin: str | None = None
     sda_pin: str | None = None
     spi_clock_pin: str | None = None
@@ -93,6 +95,8 @@ class ReaderSettings:
             scan_cooldown_seconds=_as_float(data.get("scan_cooldown_seconds"), 2.0),
             reconnect_interval=_as_float(data.get("reconnect_interval"), 5.0),
             i2c_address=_as_int(data.get("i2c_address"), 0x24),
+            i2c_mux_address=_as_optional_int(data.get("i2c_mux_address")),
+            i2c_mux_channel=_as_optional_int(data.get("i2c_mux_channel")),
             scl_pin=data.get("scl_pin"),
             sda_pin=data.get("sda_pin"),
             spi_clock_pin=data.get("spi_clock_pin"),

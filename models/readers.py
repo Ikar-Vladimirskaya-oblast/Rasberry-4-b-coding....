@@ -21,6 +21,9 @@ class ReaderSnapshot:
     name: str
     type: str
     interface: str
+    i2c_address: int
+    i2c_mux_address: int | None
+    i2c_mux_channel: int | None
     status: ReaderStatus
     mode: str
     enabled: bool
@@ -41,6 +44,9 @@ class ReaderSnapshot:
             "name": self.name,
             "type": self.type,
             "interface": self.interface,
+            "i2c_address": self.i2c_address,
+            "i2c_mux_address": self.i2c_mux_address,
+            "i2c_mux_channel": self.i2c_mux_channel,
             "status": self.status.value,
             "mode": self.mode,
             "enabled": self.enabled,
@@ -62,6 +68,9 @@ class ReaderResponse(BaseModel):
     name: str
     type: str
     interface: str
+    i2c_address: int
+    i2c_mux_address: int | None = None
+    i2c_mux_channel: int | None = None
     status: str
     mode: str
     enabled: bool
