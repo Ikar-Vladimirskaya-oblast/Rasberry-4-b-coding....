@@ -1,89 +1,161 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ru">
   <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{{ page_title }}</title>
-    <link rel="stylesheet" href="/static/styles.css" />
-    <script src="/static/app.js" defer></script>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>RFID Органайзер</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
   </head>
-  <body data-reader-slots="6">
-    <div class="app-shell">
+  <body>
+    <main class="app-shell">
       <header class="topbar">
-        <div class="topbar-title">
-          <p class="topbar-kicker">Raspberry Pi Local MVP</p>
-          <h1>RFID / NFC тестовый стенд</h1>
-          <p class="topbar-copy">Локальный сервис для PN532, логов и проверки чтения карт.</p>
+        <div>
+          <p class="eyebrow">RFID · TCA9548A · WS2812</p>
+          <h1>Органайзер</h1>
         </div>
-        <div class="topbar-actions">
-          <span class="status-pill" id="systemOnlinePill">Офлайн</span>
-          <button class="ghost-button" id="refreshButton" type="button">Обновить</button>
+        <div class="system-pill" id="systemPill">
+          <span class="dot dot-warn"></span>
+          <span>Запуск</span>
         </div>
       </header>
 
-      <main class="layout">
-        <section class="panel">
-          <div class="panel-heading">
-            <div>
-              <p class="section-label">System Status</p>
-              <h2>Состояние системы</h2>
-            </div>
-            <span class="socket-badge offline" id="socketBadge">WS offline</span>
-          </div>
-          <div class="summary-grid">
-            <article class="summary-card">
-              <span class="metric-label">Backend</span>
-              <strong class="metric-value" id="systemState">Офлайн</strong>
-            </article>
-            <article class="summary-card">
-              <span class="metric-label">Настроено / слотов</span>
-              <strong class="metric-value" id="readerCount">0 / 6</strong>
-            </article>
-            <article class="summary-card">
-              <span class="metric-label">Подключено</span>
-              <strong class="metric-value" id="connectedReaderCount">0</strong>
-            </article>
-            <article class="summary-card">
-              <span class="metric-label">Последнее событие</span>
-              <strong class="metric-value" id="lastEventTime">Нет событий</strong>
-            </article>
-          </div>
-        </section>
+      <nav class="tabs" aria-label="Разделы">
+        <button class="tab active" data-tab="dashboard">Панель</button>
+        <button class="tab" data-tab="items">Предметы</button>
+        <button class="tab" data-tab="history">История</button>
+        <button class="tab" data-tab="settings">Настройки</button>
+      </nav>
 
-        <section class="panel panel-readers">
-          <div class="panel-heading">
-            <div>
-              <p class="section-label">Readers</p>
-              <h2>Ридеры 1-6</h2>
-            </div>
-          </div>
-          <div class="readers-toolbar">
-            <div class="reader-stat">
-              <span class="reader-stat-label">Слотов</span>
-              <strong class="reader-stat-value" id="readerSlotCount">6</strong>
-            </div>
-            <div class="reader-stat">
-              <span class="reader-stat-label">Подключено</span>
-              <strong class="reader-stat-value" id="readerOnlineCount">0</strong>
-            </div>
-            <div class="reader-stat">
-              <span class="reader-stat-label">Ожидается</span>
-              <strong class="reader-stat-value" id="readerPendingCount">6</strong>
-            </div>
-          </div>
-          <div class="readers-grid" id="readersGrid"></div>
-        </section>
+      <section class="tab-panel active" id="dashboard">
+        <div class="overview-grid" id="overviewGrid"></div>
+        <div class="dashboard-tools">
+          <input id="globalSearch" placeholder="Поиск по ячейкам, UID или предметам">
+          <button class="primary-button" id="highlightEmpty" type="button">Подсветить свободные</button>
+          <button class="compact-button" id="clearSearch" type="button">Сброс</button>
+        </div>
+        <div class="prompt hidden" id="unknownPrompt"></div>
+        <div class="slots-grid" id="slotsGrid"></div>
+      </section>
 
-        <section class="panel panel-logs">
-          <div class="panel-heading">
-            <div>
-              <p class="section-label">Events Log</p>
-              <h2>Журнал событий</h2>
+      <section class="tab-panel" id="items">
+        <div class="split-layout">
+          <form class="editor-panel" id="itemForm">
+            <div class="panel-title">
+              <h2 id="itemFormTitle">Новый предмет</h2>
+              <button class="icon-button ghost" type="button" id="resetItemForm" title="Сбросить">×</button>
+            </div>
+            <input type="hidden" id="itemId">
+            <label>
+              <span>Название</span>
+              <input id="itemName" autocomplete="off" required>
+            </label>
+            <label>
+              <span>UID метки</span>
+              <div class="inline-field">
+                <input id="itemUid" autocomplete="off" required>
+                <button type="button" class="compact-button" id="useLastUid">Последняя</button>
+              </div>
+            </label>
+            <label>
+              <span>Слот</span>
+              <select id="itemSlot">
+                <option value="1">Слот 1</option>
+                <option value="2">Слот 2</option>
+                <option value="3">Слот 3</option>
+                <option value="4">Слот 4</option>
+              </select>
+            </label>
+            <label>
+              <span>Заметка</span>
+              <textarea id="itemNote" rows="4"></textarea>
+            </label>
+            <button class="primary-button" type="submit">Сохранить</button>
+            <p class="form-message" id="itemMessage"></p>
+          </form>
+
+          <div class="table-panel">
+            <div class="panel-title">
+              <h2>Предметы</h2>
+              <span class="muted" id="itemsCount">0</span>
+            </div>
+            <input class="table-search" id="itemSearch" placeholder="Поиск по предметам, UID или ячейкам">
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Слот</th>
+                    <th>Предмет</th>
+                    <th>UID</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="itemsTable"></tbody>
+              </table>
             </div>
           </div>
-          <div class="log-list" id="logsList"></div>
-        </section>
-      </main>
-    </div>
+        </div>
+      </section>
+
+      <section class="tab-panel" id="history">
+        <div class="history-tools">
+          <select id="historySlot">
+            <option value="">Все слоты</option>
+            <option value="1">Слот 1</option>
+            <option value="2">Слот 2</option>
+            <option value="3">Слот 3</option>
+            <option value="4">Слот 4</option>
+          </select>
+          <input id="historySearch" placeholder="UID или предмет">
+          <button class="compact-button" id="refreshHistory">Обновить</button>
+        </div>
+        <div class="table-panel">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Время</th>
+                  <th>Слот</th>
+                  <th>Событие</th>
+                  <th>UID</th>
+                  <th>Сообщение</th>
+                </tr>
+              </thead>
+              <tbody id="eventsTable"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="tab-panel" id="settings">
+        <div class="settings-connection" id="deviceState">Связь: проверка</div>
+        <div class="settings-grid">
+          <div class="settings-panel">
+            <div class="panel-title">
+              <h2>LED</h2>
+              <span id="ledState" class="muted"></span>
+            </div>
+            <label>
+              <span>Яркость</span>
+              <input id="brightness" type="range" min="0" max="255" step="1">
+            </label>
+            <div class="button-row">
+              <button class="primary-button" id="saveBrightness">Применить</button>
+              <button class="compact-button" id="ledOff">Погасить всё</button>
+            </div>
+          </div>
+
+          <div class="settings-panel">
+            <div class="panel-title">
+              <h2>Ридеры</h2>
+              <span id="readerState" class="muted"></span>
+            </div>
+            <button class="primary-button" id="checkHardware">Проверить ридеры</button>
+            <div class="mapping-list" id="mappingList"></div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
   </body>
 </html>

@@ -1,8 +1,0 @@
-fastapi
-uvicorn[standard]
-jinja2
-gpiozero
-rpi_ws281x
-adafruit-blinka
-adafruit-circuitpython-pn532
-pywebview

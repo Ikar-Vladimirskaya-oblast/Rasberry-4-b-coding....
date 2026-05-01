@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=IKAR Органайзер
+Comment=Открыть приложение RFID-органайзера
+Exec=/home/alex/organizer_app/launch_app.sh
+Icon=applications-internet
+Terminal=false
+Categories=Utility;
+StartupNotify=true

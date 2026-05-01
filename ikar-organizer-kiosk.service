@@ -1,0 +1,17 @@
+[Unit]
+Description=IKAR RFID Organizer kiosk
+After=graphical.target ikar-organizer.service
+Wants=ikar-organizer.service
+
+[Service]
+Type=simple
+User=alex
+Environment=DISPLAY=:0
+Environment=XAUTHORITY=/home/alex/.Xauthority
+ExecStart=/home/alex/organizer_app/launch_app.sh
+Restart=always
+RestartSec=4
+StartLimitIntervalSec=0
+
+[Install]
+WantedBy=graphical.target
