@@ -23,13 +23,13 @@ jobs:
       - name: Compile Python files
         run: python -m compileall -q .
 
-      - name: Start Flask app and check health
+      - name: Start Flask app and check state endpoint
         run: |
           python app.py &
           app_pid=$!
           trap "kill $app_pid" EXIT
           for i in $(seq 1 20); do
-            if curl -fsS http://127.0.0.1:5000/api/health; then
+            if curl -fsS http://127.0.0.1:5000/api/state; then
               exit 0
             fi
             sleep 1
