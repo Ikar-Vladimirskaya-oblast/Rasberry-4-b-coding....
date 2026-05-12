@@ -25,9 +25,9 @@ SLOTS = [
 DEFAULT_SETTINGS = {
     "brightness": "80",
     "led_enabled": "0",
-    "switch_delay": "0.08",
-    "read_delay": "0.05",
-    "read_timeout": "0.18",
+    "switch_delay": "0.10",
+    "read_delay": "0.07",
+    "read_timeout": "0.25",
     "loop_delay": "0.04",
     "reinit_delay": "1.0",
     "cloud_enabled": "1",

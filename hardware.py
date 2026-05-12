@@ -25,6 +25,9 @@ STATUS_LABELS = {
 }
 
 
+EMPTY_CONFIRM_READS = 3
+
+
 class HardwareController:
     def __init__(self):
         self.stop_event = threading.Event()
@@ -46,6 +49,7 @@ class HardwareController:
         self.readers = {}
         self.last_signatures = {}
         self.last_init_attempt = {}
+        self.slot_read_cache = {}
         self.current_brightness = None
         self.highlight = {"until": 0, "leds": {}, "message": None}
         self.highlight_was_active = False
@@ -288,6 +292,7 @@ class HardwareController:
         channel = slot["tca_channel"]
         reader = self.readers.get(channel) or self._init_reader(slot, settings)
         if reader is None:
+            self.slot_read_cache.pop(slot["slot_number"], None)
             self._apply_slot_state(slot, "error", None, None, "Ридер не инициализирован", blink_on)
             return
 
@@ -295,16 +300,40 @@ class HardwareController:
             self._select_channel(channel, settings["switch_delay"])
             time.sleep(settings["read_delay"])
             uid = reader.read_passive_target(timeout=settings["read_timeout"])
-            uid_str = self._uid_to_str(uid) if uid else None
+            raw_uid = self._uid_to_str(uid) if uid else None
+            uid_str, held, misses = self._stable_uid(slot["slot_number"], raw_uid)
             status, item, error = self._classify(slot["slot_number"], uid_str)
             self._apply_slot_state(slot, status, uid_str, item, error, blink_on)
-            self._set_reader_runtime(channel, online=True, error=None)
-            if uid_str:
-                self._set_runtime(last_uid=uid_str, last_uid_slot=slot["slot_number"])
+            self._set_reader_runtime(channel, online=True, error=None, missed_reads=misses, held=held)
+            if raw_uid:
+                self._set_runtime(last_uid=raw_uid, last_uid_slot=slot["slot_number"])
         except Exception as exc:
             self.readers[channel] = None
+            self.slot_read_cache.pop(slot["slot_number"], None)
             self._set_reader_runtime(channel, online=False, error=str(exc))
             self._apply_slot_state(slot, "error", None, None, f"Read: {exc}", blink_on)
+
+    def _stable_uid(self, slot_number, uid):
+        cache = self.slot_read_cache.setdefault(slot_number, {"uid": None, "misses": 0})
+
+        if uid:
+            cache["uid"] = uid
+            cache["misses"] = 0
+            return uid, False, 0
+
+        cached_uid = cache.get("uid")
+        if not cached_uid:
+            cache["misses"] = 0
+            return None, False, 0
+
+        misses = int(cache.get("misses") or 0) + 1
+        if misses < EMPTY_CONFIRM_READS:
+            cache["misses"] = misses
+            return cached_uid, True, misses
+
+        cache["uid"] = None
+        cache["misses"] = 0
+        return None, False, misses
 
     @staticmethod
     def _uid_to_str(uid):
