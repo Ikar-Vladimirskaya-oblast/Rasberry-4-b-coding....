@@ -25,7 +25,8 @@ STATUS_LABELS = {
 }
 
 
-EMPTY_CONFIRM_READS = 3
+EMPTY_CONFIRM_SECONDS = 3.0
+EMPTY_CONFIRM_RETRIES = 5
 
 
 class HardwareController:
@@ -301,8 +302,32 @@ class HardwareController:
             time.sleep(settings["read_delay"])
             uid = reader.read_passive_target(timeout=settings["read_timeout"])
             raw_uid = self._uid_to_str(uid) if uid else None
-            uid_str, held, misses = self._stable_uid(slot["slot_number"], raw_uid)
-            status, item, error = self._classify(slot["slot_number"], uid_str)
+
+            if raw_uid:
+                uid_str = raw_uid
+                status, item, error = self._classify(slot["slot_number"], uid_str)
+                self._remember_slot_read(slot["slot_number"], uid_str, status, item, error)
+                held = False
+                misses = 0
+            else:
+                held_state = self._held_slot_state(slot)
+                if held_state:
+                    uid_str, status, item, error, misses = held_state
+                    held = True
+                else:
+                    confirmed_uid = self._retry_uid_read(reader, settings)
+                    if confirmed_uid:
+                        uid_str = confirmed_uid
+                        status, item, error = self._classify(slot["slot_number"], uid_str)
+                        self._remember_slot_read(slot["slot_number"], uid_str, status, item, error)
+                        held = False
+                        misses = 0
+                    else:
+                        uid_str = None
+                        status, item, error = self._classify(slot["slot_number"], None)
+                        held = False
+                        misses = 0
+
             self._apply_slot_state(slot, status, uid_str, item, error, blink_on)
             self._set_reader_runtime(channel, online=True, error=None, missed_reads=misses, held=held)
             if raw_uid:
@@ -313,27 +338,70 @@ class HardwareController:
             self._set_reader_runtime(channel, online=False, error=str(exc))
             self._apply_slot_state(slot, "error", None, None, f"Read: {exc}", blink_on)
 
-    def _stable_uid(self, slot_number, uid):
+    def _remember_slot_read(self, slot_number, uid, status, item, error):
         cache = self.slot_read_cache.setdefault(slot_number, {"uid": None, "misses": 0})
+        cache.update(
+            {
+                "uid": uid,
+                "status": status,
+                "item": dict(item) if item else None,
+                "error": error,
+                "misses": 0,
+                "last_seen_at": time.monotonic(),
+            }
+        )
 
-        if uid:
-            cache["uid"] = uid
-            cache["misses"] = 0
-            return uid, False, 0
-
+    def _held_slot_state(self, slot):
+        slot_number = slot["slot_number"]
+        cache = self.slot_read_cache.setdefault(slot_number, {"uid": None, "misses": 0})
         cached_uid = cache.get("uid")
+        if not cached_uid and slot.get("current_uid") and slot.get("status") not in ("empty", "error"):
+            item = None
+            if slot.get("current_item_id"):
+                item = {"id": slot["current_item_id"], "name": slot.get("current_item_name")}
+            cache.update(
+                {
+                    "uid": slot["current_uid"],
+                    "status": slot.get("status") or "unknown",
+                    "item": item,
+                    "error": slot.get("error"),
+                    "misses": 0,
+                    "last_seen_at": time.monotonic(),
+                }
+            )
+            cached_uid = cache.get("uid")
+
         if not cached_uid:
             cache["misses"] = 0
-            return None, False, 0
+            return None
 
         misses = int(cache.get("misses") or 0) + 1
-        if misses < EMPTY_CONFIRM_READS:
+        missing_for = time.monotonic() - float(cache.get("last_seen_at") or time.monotonic())
+        if missing_for < EMPTY_CONFIRM_SECONDS:
             cache["misses"] = misses
-            return cached_uid, True, misses
+            return (
+                cached_uid,
+                cache.get("status") or "unknown",
+                cache.get("item"),
+                cache.get("error"),
+                misses,
+            )
 
         cache["uid"] = None
         cache["misses"] = 0
-        return None, False, misses
+        cache["status"] = None
+        cache["item"] = None
+        cache["error"] = None
+        return None
+
+    def _retry_uid_read(self, reader, settings):
+        retry_timeout = max(0.08, min(0.16, settings["read_timeout"]))
+        for _ in range(EMPTY_CONFIRM_RETRIES):
+            time.sleep(settings["read_delay"])
+            uid = reader.read_passive_target(timeout=retry_timeout)
+            if uid:
+                return self._uid_to_str(uid)
+        return None
 
     @staticmethod
     def _uid_to_str(uid):
